@@ -8,7 +8,7 @@ class Transcriber:
         self.model = whisper.load_model("medium", device="cpu")
         self.audio = whisper.load_audio(audio)
         self.result = whisper.transcribe(self.model, self.audio, language=lan)
-        self.word_dictionary = self.get_word_dictionary()
+        self.dictionary = self.get_word_dictionary()
 
     def get_transcript(self):
         """Returns a transcript of words in the song, with no timestamps"""
@@ -41,6 +41,23 @@ class Transcriber:
                     word_dictionary[word].append(info)
 
         return word_dictionary
+
+    def get_word_data(self, word):
+        return self.dictionary[word]
+
+    def get_word_times(self, word):
+        info = self.get_word_data(word)
+        timestamps = []
+
+        for appearance in info:
+            start_time = appearance["start"]
+            end_time = appearance["end"]
+
+            word_period = (start_time, end_time)
+
+            timestamps.append(word_period)
+
+        return timestamps
 
 
 if __name__ == "__main__":
