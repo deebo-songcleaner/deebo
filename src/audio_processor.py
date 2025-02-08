@@ -1,11 +1,43 @@
-import whisper_timestamped as whisper
-import json
+from pydub import AudioSegment
+from audio_transcription import Transcriber
 
-file = "/Users/aranyeosakwe/deebo/deebo/data/Melanie Martinez - Play Date (Official Audio).mp3"
-audio = whisper.load_audio(file)
 
-model = whisper.load_model("medium", device="cpu")
+class Song:
+    def __init__(self, audio) -> None:
+        self.audio = audio
+        self.audio_segment = self.create_audio_segment()
+        self.transcriber = Transcriber(self.audio)
 
-result = whisper.transcribe(model, audio, language="en")
+    def to_milliseconds(self, time: int):
+        return time * 1000
 
-print(result)
+    def create_audio_segment(self):
+        components = self.audio.split(".")
+
+        filetype = components[-1]
+
+        segment = AudioSegment.from_file(self.audio, filetype)
+
+        return segment
+
+    def silence_word(self, word: str):
+        times = self.transcriber.get_word_times(word)
+
+        new_segment = self.audio_segment
+
+        for start, end in times:
+            start = self.to_milliseconds(start)
+            end = self.to_milliseconds(end)
+
+            part1 = new_segment[:start]
+            censored_part = AudioSegment.silent(duration=end - start)
+            part3 = new_segment[end:]
+
+            new_segment = part1 + censored_part + part3
+
+        return new_segment
+
+    def export_song(self, song, outfile="temp.mp3", format="mp3"):
+        file_handle = song.export(outfile, format)
+
+        return file_handle
